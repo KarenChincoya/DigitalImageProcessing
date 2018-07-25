@@ -1,20 +1,21 @@
-package velasco.karen.prueba1;
+package prueba1;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 
 import javax.imageio.ImageIO;
 
-public class GetSetPixels {
-
+public class ColoredToGrayScale {
+	
 	public static void main(String[] args) {
 		BufferedImage img = null;
 		File f = null; 
-		
+
 		String dir = System.getProperty("user.dir");
 		String inputDir = dir.concat("/src/images/image1.jpg");
 		String outputDir = dir.concat("/src/images/output1.jpg");
 		
+		//read image
 		try {
 			f = new File(inputDir);
 			img = ImageIO.read(f);
@@ -26,28 +27,24 @@ public class GetSetPixels {
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
-		int p = img.getRGB(0, 0);
-		
-		/*
-		 * To get the bits right the 32 bits & bitwise ADD 0xff
-		 * hexadecimal
-		 */
-		
-		int a = (p>>24) & 0xff;
-		int r = (p>>16) & 0xff;
-		int g = (p>>8) & 0xff;
-		int b = p & 0xff;
-		
-		//for simplicity ( example ) 
-		a = 255;
-		r = 100;
-		g = 150;
-		b = 200;
-		
-		//set the pixel value
-		p = (a<<24) | (r<<16) | (g<<8) | b;
-		img.setRGB(0, 0, p);
-		//p es rgb
+		//convert to gray scale
+		for(int y=0; y<height; y++) {
+			for(int x=0; x<width; x++) {
+				int p = img.getRGB(x, y);
+				
+				int a = (p>>24)&0xff;
+				int r = (p>>16)&0xff;
+				int g = (p>>8)&0xff;
+				int b = p&0xff; //bitwise ADD
+				
+				int avg = (r+g+b)/3;
+				
+				//replace RGB value with avg
+				p = (a<<24) | (avg<<16) | (avg<<8) | avg;
+				
+				img.setRGB(x, y, p);
+			}
+		}
 		
 		//write image
 		try {

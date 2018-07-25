@@ -1,4 +1,4 @@
-package velasco.karen.prueba1;
+package prueba1;
 
 public class Negative {
 	

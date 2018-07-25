@@ -1,4 +1,4 @@
-package velasco.karen.prueba1;
+package prueba1;
 
 import java.awt.image.BufferedImage;
 import java.io.File;

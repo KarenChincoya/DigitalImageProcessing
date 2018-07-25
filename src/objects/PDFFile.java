@@ -1,9 +1,8 @@
-package velasco.karen.objects;
+package objects;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Image;
@@ -81,10 +80,10 @@ public class PDFFile {
 			int x = 25;
 			int y = 750;
 			/// 30
-			for(int i=0; i<questions;i++) {
-				
+			for (int i = 0; i < questions; i++) {
+
 				this.addImage(x, y, i);
-				y = y-30;
+				y = y - 30;
 			}
 
 		} catch (Exception e) {
@@ -107,7 +106,7 @@ public class PDFFile {
 			CustomImage customImage = new CustomImage(imgDir);
 			customImage.setText(String.valueOf(imageNumber));
 			customImage.writePNGimage(img);
-			
+
 			System.out.println(src);
 			System.out.println(dest);
 			System.out.println(img);

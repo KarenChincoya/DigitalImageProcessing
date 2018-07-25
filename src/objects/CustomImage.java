@@ -1,18 +1,18 @@
-package velasco.karen.objects;
+package objects;
 
-import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
 import javax.imageio.ImageIO;
 
-import com.itextpdf.awt.geom.Rectangle2D;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 public class CustomImage {
 	private File file = null;
@@ -478,25 +478,21 @@ public class CustomImage {
 			 */
 
 			// una vez analizado, trazar la linea roja
-/*			int pixel = this.secondImage.getRGB(pX, y);
-			int alpha = 255;
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-
-			pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;// pixel
-
-			this.secondImage.setRGB(pX, y, pixel);
-			this.secondImage.setRGB(pX, y + 1, pixel);
-			this.secondImage.setRGB(pX, y + 2, pixel);
-			this.secondImage.setRGB(pX, y + 3, pixel);
-			this.secondImage.setRGB(pX, y + 4, pixel);
-			this.secondImage.setRGB(pX, y + 5, pixel);
-			this.secondImage.setRGB(pX, y + 6, pixel);
-			this.secondImage.setRGB(pX, y + 7, pixel);
-			this.secondImage.setRGB(pX, y + 8, pixel);
-			this.secondImage.setRGB(pX, y + 9, pixel);
-			this.secondImage.setRGB(pX, y + 10, pixel);*/
+			/*
+			 * int pixel = this.secondImage.getRGB(pX, y); int alpha = 255; int red = 0; int
+			 * green = 0; int blue = 0;
+			 * 
+			 * pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;// pixel
+			 * 
+			 * this.secondImage.setRGB(pX, y, pixel); this.secondImage.setRGB(pX, y + 1,
+			 * pixel); this.secondImage.setRGB(pX, y + 2, pixel);
+			 * this.secondImage.setRGB(pX, y + 3, pixel); this.secondImage.setRGB(pX, y + 4,
+			 * pixel); this.secondImage.setRGB(pX, y + 5, pixel);
+			 * this.secondImage.setRGB(pX, y + 6, pixel); this.secondImage.setRGB(pX, y + 7,
+			 * pixel); this.secondImage.setRGB(pX, y + 8, pixel);
+			 * this.secondImage.setRGB(pX, y + 9, pixel); this.secondImage.setRGB(pX, y +
+			 * 10, pixel);
+			 */
 
 		}
 
@@ -508,15 +504,18 @@ public class CustomImage {
 		System.out.println("D: " + sumatoria[3]);
 
 		int cont = 0;
-		
-		for(int i=0; i<4;i++) {
-			if(sumatoria[i]>0) cont++; //cuenta los NO Nulos
+
+		for (int i = 0; i < 4; i++) {
+			if (sumatoria[i] > 0)
+				cont++; // cuenta los NO Nulos
 		}
-		
-		if(cont==0)return Respuesta.empty;
-		
-		if(cont>1) return Respuesta.moreThan1;
-		
+
+		if (cont == 0)
+			return Respuesta.empty;
+
+		if (cont > 1)
+			return Respuesta.moreThan1;
+
 		// encontrar el mayor
 		int max = sumatoria[0];
 		int indice = 0;
@@ -578,22 +577,94 @@ public class CustomImage {
 		System.out.println("Set line completed.");
 	}
 
+	// get Buffered Image
+	public static BufferedImage matToBufferedImage(Mat matrix, BufferedImage bimg) {
+		if (matrix != null) {
+			int cols = matrix.cols();
+			int rows = matrix.rows();
+			int elemSize = (int) matrix.elemSize();
+			byte[] data = new byte[cols * rows * elemSize];
+			int type;
+			
+			matrix.get(0, 0, data);
+			
+			switch (matrix.channels()) {
+			case 1:
+				type = BufferedImage.TYPE_BYTE_GRAY;
+				break;
+			case 3:
+				type = BufferedImage.TYPE_3BYTE_BGR;
+				// bgr to rgb
+				byte b;
+				for (int i = 0; i < data.length; i = i + 3) {
+					b = data[i];
+					data[i] = data[i + 2];
+					data[i + 2] = b;
+				}
+				break;
+			default:
+				return null;
+			}
+
+			// Reuse existing BufferedImage if possible
+			if (bimg == null || bimg.getWidth() != cols || bimg.getHeight() != rows || bimg.getType() != type) {
+				bimg = new BufferedImage(cols, rows, type);
+			}
+			bimg.getRaster().setDataElements(0, 0, cols, rows, data);
+		} else { // mat was null
+			bimg = null;
+		}
+		return bimg;
+	}
+
+	public void rotateImage(double angle) {// after rotate the image, identify the points
+		this.secondImage = this.image;
+
+		int rows = secondImage.getWidth();
+		int cols = secondImage.getHeight();
+		int type = CvType.CV_16UC1;
+		Mat newMat = new Mat(rows, cols, type);
+
+		for (int r = 0; r < rows; r++) {
+			for (int c = 0; c < cols; c++) {
+				newMat.put(r, c, secondImage.getRGB(r, c));
+			}
+		}
+
+		// Calculate size of new matrix
+		double radians = Math.toRadians(angle);
+		double sin = Math.abs(Math.sin(radians));
+		double cos = Math.abs(Math.cos(radians));
+
+		int newWidth = (int) (newMat.width() * cos + newMat.height() * sin);
+		int newHeight = (int) (newMat.width() * sin + newMat.height() * cos);
+
+		// rotating image
+		Point center = new Point(newWidth / 2, newHeight / 2);
+		Mat rotMatrix = Imgproc.getRotationMatrix2D(center, angle, 1.0); // 1.0 means 100 % scale
+
+		Size size = new Size(newWidth, newHeight);
+		Imgproc.warpAffine(newMat, newMat, rotMatrix, newMat.size());
+
+		this.matToBufferedImage(newMat, secondImage);
+	}
+
 	public static void main(String[] args) {
 		String dir = System.getProperty("user.dir");
-		
+
 		String inputDir = dir.concat("/src/images/e4.jpg");
 
 		String outputDir1 = dir.concat("/src/images/result1.png");
 		String outputDir2 = dir.concat("/src/images/output1.png");
 		String outputDir3 = dir.concat("/src/images/output3.png");
 
-/*		int width = 640;
-		int height = 320;
-*/
+		/*
+		 * int width = 640; int height = 320;
+		 */
 		CustomImage img = new CustomImage(inputDir);
 		img.toGrayScale();
 		img.writePNGimage(outputDir1);
-		
+
 		CustomImage img1 = new CustomImage(outputDir1);
 		img1.toBlackAndWhite();
 		img1.writePNGimage(outputDir1);
@@ -606,18 +677,19 @@ public class CustomImage {
 		Respuesta[] respuesta = new Respuesta[5];
 
 		CustomImage imgR = new CustomImage(outputDir1);// es el resultado
-
-		int x1 = 135;
+		imgR.rotateImage(45);
+		imgR.writePNGimage(outputDir2);
+		/*int x1 = 135;
 		int x2 = 465;
 
-		//168 -230
+		// 168 -230
 		int y1 = 168;
-		
+
 		respuesta[0] = imgR.getRespuesta(x1, x2, y1);
-		respuesta[1] = imgR.getRespuesta(x1, x2, y1+60);
-		respuesta[2] = imgR.getRespuesta(x1, x2, y1+60+60);
-		respuesta[3] = imgR.getRespuesta(x1, x2, y1+60+60+60);
-		respuesta[4] = imgR.getRespuesta(x1, x2, y1+60+60+60+60);
+		respuesta[1] = imgR.getRespuesta(x1, x2, y1 + 60);
+		respuesta[2] = imgR.getRespuesta(x1, x2, y1 + 60 + 60);
+		respuesta[3] = imgR.getRespuesta(x1, x2, y1 + 60 + 60 + 60);
+		respuesta[4] = imgR.getRespuesta(x1, x2, y1 + 60 + 60 + 60 + 60);
 
 		System.out.println("Respuestas: ");
 
@@ -626,11 +698,11 @@ public class CustomImage {
 		}
 
 		imgR.setLine(x1, x2, y1);
-		imgR.setLine(x1, x2, y1+60);
-		imgR.setLine(x1, x2, y1+60+60);
-		imgR.setLine(x1, x2, y1+60+60+60);
-		imgR.setLine(x1, x2, y1+60+60+60+60);
-		imgR.writeJPGimage(outputDir1);
+		imgR.setLine(x1, x2, y1 + 60);
+		imgR.setLine(x1, x2, y1 + 60 + 60);
+		imgR.setLine(x1, x2, y1 + 60 + 60 + 60);
+		imgR.setLine(x1, x2, y1 + 60 + 60 + 60 + 60);
+		imgR.writeJPGimage(outputDir1);*/
 
 		System.out.println("Finish.");
 	}

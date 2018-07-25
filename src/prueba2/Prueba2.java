@@ -1,4 +1,4 @@
-package velasco.karen.prueba2;
+package prueba2;
 
 import java.io.File;
 import java.io.FileNotFoundException;

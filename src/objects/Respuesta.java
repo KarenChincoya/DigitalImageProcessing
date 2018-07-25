@@ -1,4 +1,4 @@
-package velasco.karen.objects;
+package objects;
 
 public enum Respuesta {
 	A,
